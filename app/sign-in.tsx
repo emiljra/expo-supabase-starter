@@ -11,11 +11,11 @@ import { H1 } from "@/components/ui/typography";
 import { useAuth } from "@/context/supabase-provider";
 
 const formSchema = z.object({
-	email: z.string().email("Please enter a valid email address."),
+	email: z.string().email("Vennligst skriv inn en gyldig e-postadresse."),
 	password: z
 		.string()
-		.min(8, "Please enter at least 8 characters.")
-		.max(64, "Please enter fewer than 64 characters."),
+		.min(8, "Passord må være minst 8 tegn.")
+		.max(64, "Passord må være mindre enn 64 tegn."),
 });
 
 export default function SignIn() {
@@ -42,7 +42,7 @@ export default function SignIn() {
 	return (
 		<SafeAreaView className="flex-1 bg-background p-4" edges={["bottom"]}>
 			<View className="flex-1 gap-4 web:m-4">
-				<H1 className="self-start ">Sign In</H1>
+				<H1 className="self-start">Logg inn</H1>
 				<Form {...form}>
 					<View className="gap-4">
 						<FormField
@@ -50,8 +50,8 @@ export default function SignIn() {
 							name="email"
 							render={({ field }) => (
 								<FormInput
-									label="Email"
-									placeholder="Email"
+									label="E-post"
+									placeholder="E-post"
 									autoCapitalize="none"
 									autoComplete="email"
 									autoCorrect={false}
@@ -65,8 +65,8 @@ export default function SignIn() {
 							name="password"
 							render={({ field }) => (
 								<FormInput
-									label="Password"
-									placeholder="Password"
+									label="Passord"
+									placeholder="Passord"
 									autoCapitalize="none"
 									autoCorrect={false}
 									secureTextEntry
@@ -87,7 +87,7 @@ export default function SignIn() {
 				{form.formState.isSubmitting ? (
 					<ActivityIndicator size="small" />
 				) : (
-					<Text>Sign In</Text>
+					<Text>Logg inn</Text>
 				)}
 			</Button>
 		</SafeAreaView>

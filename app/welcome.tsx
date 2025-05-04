@@ -14,17 +14,16 @@ export default function WelcomeScreen() {
 	const { colorScheme } = useColorScheme();
 	const appIcon =
 		colorScheme === "dark"
-			? require("@/assets/icon.png")
-			: require("@/assets/icon-dark.png");
+			? require("@/assets/logo.svg")
+			: require("@/assets/logo.svg");
 
 	return (
-		<SafeAreaView className="flex flex-1 bg-background p-4">
+		<SafeAreaView className="flex flex-1 bg-[#E7F2F8] p-4">
 			<View className="flex flex-1 items-center justify-center gap-y-4 web:m-4">
-				<Image source={appIcon} className="w-16 h-16 rounded-xl" />
-				<H1 className="text-center">Welcome to Expo Supabase Starter</H1>
+				<Image source={appIcon} className="w-[150px] h-[26px]" contentFit="contain" />
+				<H1 className="text-center text-[#23245A]">Velkommen tilbake</H1>
 				<Muted className="text-center">
-					A comprehensive starter project for developing React Native and Expo
-					applications with Supabase as the backend.
+				Sammen for havets framtid
 				</Muted>
 			</View>
 			<View className="flex flex-col gap-y-4 web:m-4">
@@ -35,7 +34,7 @@ export default function WelcomeScreen() {
 						router.push("/sign-up");
 					}}
 				>
-					<Text>Sign Up</Text>
+					<Text>Registrer deg</Text>
 				</Button>
 				<Button
 					size="default"
@@ -44,7 +43,7 @@ export default function WelcomeScreen() {
 						router.push("/sign-in");
 					}}
 				>
-					<Text>Sign In</Text>
+					<Text>Logg inn</Text>
 				</Button>
 			</View>
 		</SafeAreaView>

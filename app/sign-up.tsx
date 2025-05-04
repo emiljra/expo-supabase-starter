@@ -62,7 +62,7 @@ export default function SignUp() {
 	return (
 		<SafeAreaView className="flex-1 bg-background p-4" edges={["bottom"]}>
 			<View className="flex-1 gap-4 web:m-4">
-				<H1 className="self-start">Sign Up</H1>
+				<H1 className="self-start">Registrer deg</H1>
 				<Form {...form}>
 					<View className="gap-4">
 						<FormField
@@ -70,8 +70,8 @@ export default function SignUp() {
 							name="email"
 							render={({ field }) => (
 								<FormInput
-									label="Email"
-									placeholder="Email"
+									label="E-post"
+									placeholder="E-post"
 									autoCapitalize="none"
 									autoComplete="email"
 									autoCorrect={false}
@@ -85,8 +85,8 @@ export default function SignUp() {
 							name="password"
 							render={({ field }) => (
 								<FormInput
-									label="Password"
-									placeholder="Password"
+									label="Passord"
+									placeholder="Passord"
 									autoCapitalize="none"
 									autoCorrect={false}
 									secureTextEntry
@@ -99,8 +99,8 @@ export default function SignUp() {
 							name="confirmPassword"
 							render={({ field }) => (
 								<FormInput
-									label="Confirm Password"
-									placeholder="Confirm password"
+									label="Bekreft passord"
+									placeholder="Bekreft passord"
 									autoCapitalize="none"
 									autoCorrect={false}
 									secureTextEntry
@@ -121,7 +121,7 @@ export default function SignUp() {
 				{form.formState.isSubmitting ? (
 					<ActivityIndicator size="small" />
 				) : (
-					<Text>Sign Up</Text>
+					<Text>Registrer deg</Text>
 				)}
 			</Button>
 		</SafeAreaView>
