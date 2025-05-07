@@ -15,16 +15,21 @@ export default function TabsLayout() {
 			screenOptions={{
 				headerShown: false,
 				tabBarStyle: {
-					backgroundColor:
-						colorScheme === "dark"
+					backgroundColor: "#23245A",
+
+						/* colorScheme === "dark"
 							? colors.dark.background
-							: colors.light.background,
+							: colors.light.background, */
 				},
-				tabBarActiveTintColor:
-					colorScheme === "dark"
+				tabBarActiveTintColor: "#fa8072",
+					/* colorScheme === "dark"
 						? colors.dark.foreground
-						: colors.light.foreground,
-				tabBarShowLabel: false,
+						: colors.light.foreground, */
+				tabBarShowLabel: true,
+				tabBarLabelStyle: {
+					color: "white",
+				},
+				tabBarInactiveTintColor: "white",
 			}}
 		>
 			<Tabs.Screen
