@@ -1,6 +1,7 @@
 import "../global.css";
 
 import { Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { AuthProvider } from "@/context/supabase-provider";
 import { NotificationsProvider } from "@/context/notifications-provider";
@@ -21,54 +22,55 @@ export default function AppLayout() {
 	const { colorScheme } = useColorScheme();
 
 	return (
-		<QueryClientProvider client={queryClient}>
-			<AuthProvider>
-				<NotificationsProvider>
-					<Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
-						<Stack.Screen name="(protected)" />
-						<Stack.Screen name="welcome" />
-						<Stack.Screen
-							name="sign-up"
-							options={{
-								presentation: "modal",
-								headerShown: true,
-								headerTitle: "Registrer deg",
-								headerStyle: {
-									backgroundColor:
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<QueryClientProvider client={queryClient}>
+				<AuthProvider>
+					<NotificationsProvider>
+						<Stack screenOptions={{ headerShown: false, gestureEnabled: false }}>
+							<Stack.Screen name="(protected)" />
+							<Stack.Screen name="welcome" />
+							<Stack.Screen
+								name="sign-up"
+								options={{
+									presentation: "modal",
+									headerShown: true,
+									headerTitle: "Registrer deg",
+									headerStyle: {
+										backgroundColor:
+											colorScheme === "dark"
+												? colors.dark.background
+												: colors.light.background,
+									},
+									headerTintColor:
 										colorScheme === "dark"
-											? colors.dark.background
-											: colors.light.background,
-								},
-								headerTintColor:
-									colorScheme === "dark"
-										? colors.dark.foreground
-										: colors.light.foreground,
-								gestureEnabled: true,
-							}}
-						/>
-						<Stack.Screen
-							name="sign-in"
-							options={{
-								presentation: "modal",
-								headerShown: true,
-								headerTitle: "Logg inn",
-								headerStyle: {
-									backgroundColor:
+											? colors.dark.foreground
+											: colors.light.foreground,
+									gestureEnabled: true,
+								}}
+							/>
+							<Stack.Screen
+								name="sign-in"
+								options={{
+									presentation: "modal",
+									headerShown: true,
+									headerTitle: "Logg inn",
+									headerStyle: {
+										backgroundColor:
+											colorScheme === "dark"
+												? colors.dark.background
+												: colors.light.background,
+									},
+									headerTintColor:
 										colorScheme === "dark"
-											? colors.dark.background
-											: colors.light.background,
-								},
-								headerTintColor:
-									colorScheme === "dark"
-										? colors.dark.foreground
-										: colors.light.foreground,
-								gestureEnabled: true,
-							}}
-						/>
-						
-					</Stack>
-				</NotificationsProvider>
-			</AuthProvider>
-		</QueryClientProvider>
+											? colors.dark.foreground
+											: colors.light.foreground,
+									gestureEnabled: true,
+								}}
+							/>
+						</Stack>
+					</NotificationsProvider>
+				</AuthProvider>
+			</QueryClientProvider>
+		</GestureHandlerRootView>
 	);
 }
