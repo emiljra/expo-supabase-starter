@@ -6,14 +6,14 @@ import { useLocalSearchParams, Stack, router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/config/supabase";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, MapPin, ChevronRight, X } from "lucide-react-native";
+import { ChevronLeft, MapPin } from "lucide-react-native";
 import { Image } from "@/components/image";
-import { useState, useCallback } from "react";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
-import { GestureDetector, Gesture } from "react-native-gesture-handler";
+import { useState, useCallback, useMemo } from "react";
 import React from "react";
+import ImageView from "react-native-image-viewing";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const THUMBNAIL_SIZE = 80;
 
 interface Listing {
   id: string;
@@ -26,7 +26,6 @@ interface Listing {
 }
 
 const fetchListing = async (type: string, id: string): Promise<Listing> => {
-  // Map the type to the correct table name
   const tableMap = {
     'job': 'jobs',
     'vessel': 'vessels',
@@ -54,7 +53,7 @@ export default function ListingScreen() {
   const listingType = typeof type === 'string' ? type : '';
   const listingId = typeof id === 'string' ? id : '';
   const [refreshing, setRefreshing] = useState(false);
-  const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const { data: listing, isLoading, error, refetch } = useQuery({
@@ -68,38 +67,24 @@ export default function ListingScreen() {
     setRefreshing(false);
   };
 
-  // Skip first image (logo) for job listings
-  const images = (() => {
+  // Skip first image (logo) for job listings and memoize the result
+  const images = useMemo(() => {
     const allImages = (listing?.images || [listing?.featured_image]).filter((img): img is string => !!img);
     if (listingType === 'job' && allImages.length > 1) {
       return allImages.slice(1);
     }
     return allImages;
-  })();
+  }, [listing?.images, listing?.featured_image, listingType]);
 
-  const handleImagePress = (index: number) => {
+  const imageUrls = useMemo(() => 
+    images.map(url => ({ uri: url })),
+    [images]
+  );
+
+  const handleImagePress = useCallback((index: number) => {
     setCurrentImageIndex(index);
-    setLightboxVisible(true);
-  };
-
-  const handleNext = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
-
-  const handlePrevious = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
-
-  const swipeGesture = Gesture.Pan()
-    .onEnd((event) => {
-      if (Math.abs(event.translationX) > 50) {
-        if (event.translationX > 0) {
-          handlePrevious();
-        } else {
-          handleNext();
-        }
-      }
-    });
+    setImageViewerVisible(true);
+  }, []);
 
   if (isLoading && !refreshing) {
     return (
@@ -153,6 +138,7 @@ export default function ListingScreen() {
               source={{ uri: listing?.featured_image }}
               className="w-full h-72 rounded-xl mb-4"
               contentFit="cover"
+              cachePolicy="memory-disk"
             />
           </Pressable>
 
@@ -172,6 +158,7 @@ export default function ListingScreen() {
                     source={{ uri: image }}
                     className="w-20 h-20 rounded-lg"
                     contentFit="cover"
+                    cachePolicy="memory-disk"
                   />
                 </Pressable>
               ))}
@@ -200,61 +187,16 @@ export default function ListingScreen() {
         </View>
       </ScrollView>
 
-      {lightboxVisible && (
-        <Animated.View 
-          entering={FadeIn} 
-          exiting={FadeOut}
-          className="absolute inset-0 bg-black z-50"
-        >
-          <GestureDetector gesture={swipeGesture}>
-            <View className="flex-1">
-              <Pressable 
-                onPress={() => setLightboxVisible(false)}
-                className="absolute top-12 right-4 z-10 p-2"
-              >
-                <X size={24} color="white" />
-              </Pressable>
-
-              <View className="flex-1 justify-center">
-                <Image
-                  source={{ uri: images[currentImageIndex] }}
-                  className="w-full h-full"
-                  contentFit="contain"
-                />
-              </View>
-
-              {images.length > 1 && (
-                <>
-                  <Pressable 
-                    onPress={handlePrevious}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 p-2"
-                  >
-                    <ChevronLeft size={32} color="white" />
-                  </Pressable>
-
-                  <Pressable 
-                    onPress={handleNext}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2"
-                  >
-                    <ChevronRight size={32} color="white" />
-                  </Pressable>
-
-                  <View className="absolute bottom-12 left-0 right-0 flex-row justify-center gap-2">
-                    {images.map((_, index) => (
-                      <View
-                        key={index}
-                        className={`w-2 h-2 rounded-full ${
-                          index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                        }`}
-                      />
-                    ))}
-                  </View>
-                </>
-              )}
-            </View>
-          </GestureDetector>
-        </Animated.View>
-      )}
+      <ImageView
+        images={imageUrls}
+        imageIndex={currentImageIndex}
+        visible={imageViewerVisible}
+        onRequestClose={() => setImageViewerVisible(false)}
+        swipeToCloseEnabled={true}
+        doubleTapToZoomEnabled={true}
+        presentationStyle="overFullScreen"
+        animationType="fade"
+      />
     </SafeAreaView>
   );
 } 
