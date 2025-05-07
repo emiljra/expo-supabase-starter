@@ -11,6 +11,8 @@ import { Image } from "@/components/image";
 import { useState, useCallback, useMemo } from "react";
 import React from "react";
 import ImageView from "react-native-image-viewing";
+import RenderHtml from 'react-native-render-html';
+import CompanyCard from "@/components/company-card";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
@@ -23,26 +25,65 @@ interface Listing {
   kommunenavn: string;
   price: number | null;
   description: string;
+  company?: {
+    company_logo: string;
+    company_name: string;
+    about_company: string;
+    company_url: string;
+    isVerified: boolean;
+    org_nr: string;
+    companyBranding?: {
+      brandColors?: {
+        backgroundColor?: string;
+        textColor?: string;
+      };
+    };
+  };
+  contact_person?: Array<{
+    full_name: string;
+    job_title: string;
+    phone: string;
+    email: string;
+  }>;
+  application_url?: string;
 }
 
 const fetchListing = async (type: string, id: string): Promise<Listing> => {
   const tableMap = {
     'job': 'jobs',
-    'vessel': 'vessels',
+    'vessel': 'vessel',
     'borsen': 'borsen'
   } as const;
 
   const tableName = tableMap[type as keyof typeof tableMap] || type;
 
+  // 1. Fetch the listing with nested company and branding
   const { data, error } = await supabase
     .from(tableName)
-    .select('*')
+    .select(`
+      *,
+      company:company_id (
+        *,
+        companyBranding (*)
+      )
+    `)
     .eq('id', id)
     .single();
 
-  if (error) {
-    console.error('Error fetching listing:', error);
-    throw error;
+  if (error) throw error;
+  if (!data) throw new Error('No data found');
+
+  // 2. Fetch contact person profiles if needed
+  const contactPersonIds = Array.isArray(data.contact_person) ? data.contact_person : [];
+  if (contactPersonIds.length > 0) {
+    const profilesResponse = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', contactPersonIds);
+
+    data.contact_person = profilesResponse.data || [];
+  } else {
+    data.contact_person = [];
   }
 
   return data;
@@ -181,10 +222,31 @@ export default function ListingScreen() {
 
             <View className="gap-2">
               <Text className="text-lg font-semibold">Beskrivelse</Text>
-              <Text className="text-base leading-6">{listing?.description}</Text>
+              <RenderHtml
+                contentWidth={SCREEN_WIDTH - 32} // Account for padding
+                source={{ html: listing?.description || '' }}
+                tagsStyles={{
+                  p: { marginBottom: 8 },
+                  br: { marginBottom: 4 },
+                  ul: { marginBottom: 8 },
+                  li: { marginBottom: 4 },
+                  strong: { fontWeight: 'bold' },
+                  em: { fontStyle: 'italic' }
+                }}
+                defaultTextProps={{
+                  style: { color: '#000', fontSize: 16, lineHeight: 24 }
+                }}
+              />
             </View>
           </View>
         </View>
+        {listing?.company && listing?.contact_person && (
+          <CompanyCard data={{
+            company_id: listing.company,
+            contact_person: listing.contact_person,
+            application_url: listing.application_url,
+          }} listingType={listingType} />
+        )}
       </ScrollView>
 
       <ImageView
