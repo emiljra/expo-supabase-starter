@@ -10,8 +10,17 @@ import { ChevronLeft } from "lucide-react-native";
 import { Image } from "@/components/image";
 
 const fetchListing = async (type: string, id: string) => {
+  // Map the type to the correct table name
+  const tableMap = {
+    'job': 'jobs',
+    'vessel': 'vessels',
+    'borsen': 'borsen'
+  } as const;
+
+  const tableName = tableMap[type as keyof typeof tableMap] || type;
+
   const { data, error } = await supabase
-    .from(type)
+    .from(tableName)
     .select('*')
     .eq('id', id)
     .single();
