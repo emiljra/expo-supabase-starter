@@ -231,14 +231,15 @@ export default function ListingScreen() {
 
       <View className="flex-row items-center px-2 py-2 border-b border-border">
         <Button
-          variant="ghost"
-          size="icon"
+          variant="link"
+          size="sm"
+          className="flex-row items-center px-0"
           onPress={() => router.back()}
           >
           <ChevronLeft size={24} />
           
-        </Button>
        <Text className="text-lg">Tilbake</Text>
+        </Button>
       </View>
           <View className="absolute right-4 top-2 z-10">
             <TouchableOpacity
