@@ -14,6 +14,7 @@ import ImageView from "react-native-image-viewing";
 import RenderHtml from 'react-native-render-html';
 import CompanyCard from "@/components/company-card";
 import Carousel from 'react-native-reanimated-carousel';
+import ListingMeta from "@/components/listing-meta";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
@@ -23,7 +24,9 @@ interface Listing {
   title: string;
   featured_image: string;
   images?: string[];
-  kommunenavn: string;
+  kommune_fk: {
+    kommunenavn: string;
+  };
   price: number | null;
   description: string;
   company?: {
@@ -61,15 +64,24 @@ const fetchListing = async (type: string, id: string): Promise<Listing> => {
   // 1. Fetch the listing with nested company and branding
   const { data, error } = await supabase
     .from(tableName)
-    .select(`
-      *,
-      company:company_id (
+    .select(
+      `
         *,
-        companyBranding (*)
-      )
-    `)
+        company_id (
+          *,
+          companyBranding (*)
+        ),
+        fylke_fk (
+          fylkesnavn
+        ),
+        kommune_fk (
+          kommunenavn
+        )
+      `
+    )
     .eq('id', id)
-    .single();
+    .single()
+    .throwOnError();
 
   if (error) throw error;
   if (!data) throw new Error('No data found');
@@ -87,6 +99,7 @@ const fetchListing = async (type: string, id: string): Promise<Listing> => {
     data.contact_person = [];
   }
 
+  console.log(data)
   return data;
 };
 
@@ -213,11 +226,13 @@ export default function ListingScreen() {
               ))}
             </View>
           </View>
-
+          {listing && (
+            <ListingMeta data={listing} type={listingType as 'job' | 'borsen' | 'vessel'} />
+          )}
           <View className="gap-4">
             <View className="flex-row items-center gap-2">
               <MapPin size={16} className="text-muted-foreground" />
-              <Text className="text-muted-foreground">{listing?.kommunenavn}</Text>
+              <Text className="text-muted-foreground">{listing?.kommune_fk?.kommunenavn}</Text>
             </View>
 
             {listing?.price && (
