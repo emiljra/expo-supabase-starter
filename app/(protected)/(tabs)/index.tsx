@@ -53,6 +53,32 @@ export default function Home() {
 	const [page, setPage] = useState(0);
 	const queryClient = useQueryClient();
 
+	const StickyHeader = () => (
+		<View className="flex-row gap-2 z-50">
+			<Button
+				variant="outline"
+				className="rounded-full"
+				onPress={() => navigateToCategory("borsen")}
+			>
+				<Text className="text-foreground">Børsen</Text>
+			</Button>
+			<Button
+				variant="outline"
+				className="rounded-full"
+				onPress={() => navigateToCategory("vessel")}
+			>
+				<Text className="text-foreground">Fartøy</Text>
+			</Button>
+			<Button
+				variant="outline"
+				className="rounded-full"
+				onPress={() => navigateToCategory("job")}
+			>
+				<Text className="text-foreground">Jobb</Text>
+			</Button>
+		</View>
+	);
+
 	// Increased debounce to 800ms for better performance
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
@@ -133,7 +159,7 @@ export default function Home() {
 	}
 
 	return (
-		<SafeAreaView edges={["top"]} className="flex-1 bg-background p-2">
+		<SafeAreaView edges={["top"]} className="flex-1 bg-background">
 			<View className="flex-1">
 				{isLoading && refreshing ? (
 					<View className="flex-1 items-center justify-center">
@@ -141,51 +167,62 @@ export default function Home() {
 					</View>
 				) : filteredListings.length > 0 ? (
 					<MasonryFlashList
-						ListHeaderComponentStyle={{
-							marginTop: -20,
-						}}
+						disableHorizontalListHeightMeasurement
+						ListEmptyComponent={() => (
+							<View className="flex-1 items-center justify-center">
+								<Text className="text-muted-foreground">
+									Ingen annonser funnet
+								</Text>
+							</View>
+						)}
+						StickyHeaderComponent={StickyHeader}
 						ListHeaderComponent={
-							<View className="p-2 gap-2  -mt-12 z-50">
-								<View className="relative w-full">
-									<View className="absolute left-3 top-2.5 z-10">
-										<Search
-											color="#000"
-											size={20}
-											className="text-muted-foreground"
+							<View>
+								<View className="p-2">
+									<View className="relative w-full">
+										<View className="absolute left-3 top-2.5 z-10">
+											<Search
+												color="#000"
+												size={20}
+												className="text-muted-foreground"
+											/>
+										</View>
+										<Input
+											className="rounded-lg mb-2 pl-10 w-full bg-[#E7F2F8]"
+											placeholder="Søk etter annonser..."
+											value={inputText}
+											onChangeText={setInputText}
 										/>
 									</View>
-									<Input
-										className="rounded-lg mb-2 pl-10 w-full bg-[#E7F2F8]"
-										placeholder="Søk etter annonser..."
-										value={inputText}
-										onChangeText={setInputText}
-									/>
 								</View>
-								<View className="flex-row gap-2">
-									<Button
-										variant="outline"
-										className="rounded-full"
-										onPress={() => navigateToCategory("borsen")}
-									>
-										<Text className="text-foreground">Børsen</Text>
-									</Button>
-									<Button
-										variant="outline"
-										className="rounded-full"
-										onPress={() => navigateToCategory("vessel")}
-									>
-										<Text className="text-foreground">Fartøy</Text>
-									</Button>
-									<Button
-										variant="outline"
-										className="rounded-full"
-										onPress={() => navigateToCategory("job")}
-									>
-										<Text className="text-foreground">Jobb</Text>
-									</Button>
+								<View className="p-2 bg-white">
+									<View className="flex-row gap-2">
+										<Button
+											variant="outline"
+											className="rounded-full"
+											onPress={() => navigateToCategory("borsen")}
+										>
+											<Text className="text-foreground">Børsen</Text>
+										</Button>
+										<Button
+											variant="outline"
+											className="rounded-full"
+											onPress={() => navigateToCategory("vessel")}
+										>
+											<Text className="text-foreground">Fartøy</Text>
+										</Button>
+										<Button
+											variant="outline"
+											className="rounded-full"
+											onPress={() => navigateToCategory("job")}
+										>
+											<Text className="text-foreground">Jobb</Text>
+										</Button>
+									</View>
 								</View>
 							</View>
 						}
+						stickyHeaderIndices={[1]}
 						data={filteredListings}
 						onRefresh={handleRefresh}
 						refreshing={refreshing}

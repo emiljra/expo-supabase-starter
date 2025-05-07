@@ -1,4 +1,4 @@
-import { View, ActivityIndicator, ScrollView, RefreshControl, Dimensions, Pressable } from "react-native";
+import { View, ActivityIndicator, ScrollView, RefreshControl, Dimensions, Pressable, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "@/components/safe-area-view";
 import { Text } from "@/components/ui/text";
 import { H1 } from "@/components/ui/typography";
@@ -6,7 +6,7 @@ import { useLocalSearchParams, Stack, router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/config/supabase";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, MapPin } from "lucide-react-native";
+import { Bookmark, ChevronLeft, MapPin } from "lucide-react-native";
 import { Image } from "@/components/image";
 import { useState, useCallback, useMemo } from "react";
 import React from "react";
@@ -15,6 +15,7 @@ import RenderHtml from 'react-native-render-html';
 import CompanyCard from "@/components/company-card";
 import Carousel from 'react-native-reanimated-carousel';
 import ListingMeta from "@/components/listing-meta";
+import { cn } from "@/lib/utils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
@@ -132,6 +133,16 @@ export default function ListingScreen() {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const handleFavorite = useCallback(async () => {
+    try {
+      // TODO: Implement favorite functionality with Supabase
+      setIsFavorite(prev => !prev);
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  }, []);
 
   const { data: listing, isLoading, error, refetch } = useQuery({
     queryKey: ['listing', listingType, listingId],
@@ -185,19 +196,41 @@ export default function ListingScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <Stack.Screen options={{ title: listing?.title }} />
       
-      <View className="flex-row gap-2 items-center px-4 py-2 border-b border-border">
+      <View>
+
+      <View className="flex-row items-center px-2 py-2 border-b border-border">
         <Button
           variant="ghost"
           size="icon"
           onPress={() => router.back()}
-        >
+          >
           <ChevronLeft size={24} />
+          
         </Button>
-        <H1 className="flex-1 text-lg">{listing?.title}</H1>
+       <Text className="text-lg">Tilbake</Text>
       </View>
+          <View className="absolute right-4 top-2 z-10">
+            <TouchableOpacity
+              onPress={handleFavorite}
+              className={cn(
+                "p-2 rounded-full bg-background",
+                
+              )}
+            >
+              <Bookmark 
+                size={24} 
+                color={"#fa8072"}
+                fill={isFavorite ? "#fa8072" : "none"}
+                className={cn(
+                  "text-foreground",
+                  isFavorite && "text-primary-foreground"
+                )}
+              />
+            </TouchableOpacity>
+          </View>
 
+          </View>
       <ScrollView 
         className="flex-1" 
         showsVerticalScrollIndicator={false}
@@ -245,6 +278,9 @@ export default function ListingScreen() {
                   }}
                 />
               ))}
+            </View>
+            <View className="flex-row items-center gap-2">
+              <H1 className="text-lg text-balance">{listing?.title}</H1>
             </View>
           </View>
           {listing && (

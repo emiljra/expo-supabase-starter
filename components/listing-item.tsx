@@ -1,13 +1,14 @@
 import React from "react";
-import { View, TouchableOpacity, Modal } from "react-native";
+import { View, TouchableOpacity, Modal, Alert, Animated, Dimensions } from "react-native";
 import { Text } from "./ui/text";
 import { Image } from "./image";
-import { Bookmark } from "lucide-react-native";
-import { useAddFavorite, useRemoveFavorite, useFavorites, useFavoriteFolders, useMoveFavoriteToFolder } from "@/lib/hooks";
+import { Bookmark, Plus, Folder, X } from "lucide-react-native";
+import { useAddFavorite, useRemoveFavorite, useFavorites, useFavoriteFolders, useMoveFavoriteToFolder, useCreateFavoriteFolder } from "@/lib/hooks";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface Listing {
 	id: string;
@@ -24,7 +25,10 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 	const addFavorite = useAddFavorite();
 	const removeFavorite = useRemoveFavorite();
 	const moveToFolder = useMoveFavoriteToFolder();
+	const createFolder = useCreateFavoriteFolder();
 	const [showMenu, setShowMenu] = useState(false);
+	const [showFolderModal, setShowFolderModal] = useState(false);
+	const slideAnim = useRef(new Animated.Value(0)).current;
 
 	const isFavorite = favorites?.some(favorite => {
 		if (listing.type === 'job') return favorite.job_id === listing.id;
@@ -47,34 +51,101 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 					await removeFavorite.mutateAsync(currentFavorite.id);
 				}
 			} else {
-				// Check if we already have a favorite for this listing
-				const existingFavorite = favorites?.find(f => {
-					if (listing.type === 'job') return f.job_id === listing.id;
-					if (listing.type === 'vessel') return f.vessel_id === listing.id;
-					if (listing.type === 'borsen') return f.borsen_id === listing.id;
-					return false;
-				});
-
-				if (existingFavorite) {
-					// If it exists, just update its folder_id if needed
-					await moveToFolder.mutateAsync({
-						favoriteId: existingFavorite.id,
-						folderId: null
-					});
-				} else {
-					// If it doesn't exist, create a new favorite
-					await addFavorite.mutateAsync({
-						listing_type: listing.type,
-						job_id: listing.type === 'job' ? listing.id : null,
-						vessel_id: listing.type === 'vessel' ? listing.id : null,
-						borsen_id: listing.type === 'borsen' ? listing.id : null,
-						folder_id: null,
-						listing: null
-					});
-				}
+				handleShowFolderModal();
 			}
 		} catch (error) {
 			console.error("Error toggling favorite:", error);
+		}
+	};
+
+	const handleShowFolderModal = () => {
+		setShowFolderModal(true);
+		Animated.spring(slideAnim, {
+			toValue: 1,
+			useNativeDriver: true,
+			bounciness: 0,
+		}).start();
+	};
+
+	const handleHideFolderModal = () => {
+		Animated.timing(slideAnim, {
+			toValue: 0,
+			duration: 200,
+			useNativeDriver: true,
+		}).start(() => {
+			setShowFolderModal(false);
+		});
+	};
+
+	const handleCreateNewFolder = () => {
+		Alert.prompt(
+			"Ny mappe",
+			"Skriv inn navn på den nye mappen",
+			[
+				{
+					text: "Avbryt",
+					style: "cancel",
+				},
+				{
+					text: "Opprett",
+					onPress: async (name) => {
+						if (name?.trim()) {
+							try {
+								const newFolder = await createFolder.mutateAsync(name.trim());
+								await handleAddToFolder(newFolder.id);
+							} catch (error: any) {
+								if (error?.code === "23505") {
+									Alert.alert(
+										"Kunne ikke opprette mappe",
+										"Det finnes allerede en mappe med dette navnet",
+										[{ text: "OK" }]
+									);
+								} else {
+									Alert.alert(
+										"Kunne ikke opprette mappe",
+										"Det oppstod en feil ved opprettelse av mappen",
+										[{ text: "OK" }]
+									);
+								}
+							}
+						}
+					},
+				},
+			],
+			"plain-text"
+		);
+	};
+
+	const handleAddToFolder = async (folderId: string | null) => {
+		try {
+			// Check if we already have a favorite for this listing
+			const existingFavorite = favorites?.find(f => {
+				if (listing.type === 'job') return f.job_id === listing.id;
+				if (listing.type === 'vessel') return f.vessel_id === listing.id;
+				if (listing.type === 'borsen') return f.borsen_id === listing.id;
+				return false;
+			});
+
+			if (existingFavorite) {
+				// If it exists, just update its folder_id
+				await moveToFolder.mutateAsync({
+					favoriteId: existingFavorite.id,
+					folderId
+				});
+			} else {
+				// If it doesn't exist, create a new favorite
+				await addFavorite.mutateAsync({
+					listing_type: listing.type,
+					job_id: listing.type === 'job' ? listing.id : null,
+					vessel_id: listing.type === 'vessel' ? listing.id : null,
+					borsen_id: listing.type === 'borsen' ? listing.id : null,
+					folder_id: folderId,
+					listing: null
+				});
+			}
+			handleHideFolderModal();
+		} catch (error) {
+			console.error("Error adding to folder:", error);
 		}
 	};
 
@@ -106,12 +177,12 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 				<View className="relative">
 					<Image
 						source={{ uri: listing.featured_image }}
-						className="w-full h-40 rounded-lg border object-contain border-[#E7F2F8]"
+						className="w-full h-36 rounded-lg border object-contain border-[#E7F2F8]"
 						contentFit="cover"
 					/>
 					<View className="absolute top-2 right-2">
 						<TouchableOpacity
-							className="p-2 rounded-full bg-[#E7F2F8]/20"
+							className="p-2 rounded-full bg-[#E7F2F8]"
 							onPress={handleFavorite}
 							onLongPress={() => isFavorite && setShowMenu(true)}
 							delayLongPress={500}
@@ -136,9 +207,79 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 			</TouchableOpacity>
 
 			<Modal
+				visible={showFolderModal}
+				transparent
+				animationType="none"
+				onRequestClose={handleHideFolderModal}
+			>
+				<TouchableOpacity
+					className="flex-1 bg-black/50"
+					activeOpacity={1}
+					onPress={handleHideFolderModal}
+				>
+					<Animated.View 
+						className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl"
+						style={{
+							transform: [{
+								translateY: slideAnim.interpolate({
+									inputRange: [0, 1],
+									outputRange: [600, 0]
+								})
+							}]
+						}}
+					>
+						<SafeAreaView edges={['bottom']}>
+							<View className="p-4">
+								<View className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+								
+								<View className="flex-row items-center justify-between mb-6 px-2">
+									<Text className="text-xl font-semibold">Legg til i mappe</Text>
+									<TouchableOpacity 
+										onPress={handleHideFolderModal}
+										className="p-2 -m-2"
+									>
+										<X size={24} className="text-muted-foreground" />
+									</TouchableOpacity>
+								</View>
+
+								<View className="space-y-3 mb-6">
+									<TouchableOpacity
+										className="flex-row items-center p-4 rounded-xl bg-muted/50 active:bg-muted gap-2"
+										onPress={() => handleAddToFolder(null)}
+									>
+										<Folder color="#fa8072" size={24} className="text-muted-foreground mr-4" />
+										<Text className="text-base">Ingen mappe</Text>
+									</TouchableOpacity>
+									
+									{folders?.map((folder) => (
+										<TouchableOpacity
+											key={folder.id}
+											className="flex-row items-center p-4 rounded-xl bg-muted/50 active:bg-muted gap-2"
+											onPress={() => handleAddToFolder(folder.id)}
+										>
+											<Folder size={24} className="text-muted-foreground mr-4" />
+											<Text className="text-base">{folder.name}</Text>
+										</TouchableOpacity>
+									))}
+								</View>
+
+								<TouchableOpacity
+									className="flex-row items-center justify-center p-4 rounded-xl bg-primary active:bg-primary/90 mb-2 gap-2"
+									onPress={handleCreateNewFolder}
+								>
+									<Plus color="white" size={20} className="text-primary-foreground mr-3" />
+									<Text className="text-base font-medium text-primary-foreground">Opprett ny mappe</Text>
+								</TouchableOpacity>
+							</View>
+						</SafeAreaView>
+					</Animated.View>
+				</TouchableOpacity>
+			</Modal>
+
+			<Modal
 				visible={showMenu}
 				transparent
-				animationType="fade"
+				animationType="none"
 				onRequestClose={() => setShowMenu(false)}
 			>
 				<TouchableOpacity
@@ -146,28 +287,54 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 					activeOpacity={1}
 					onPress={() => setShowMenu(false)}
 				>
-					<View className="flex-1 justify-center items-center">
-						<View className="bg-background rounded-lg p-4 w-80">
-							<Text className="text-lg font-semibold mb-4">Flytt til mappe</Text>
-							<Button
-								variant="ghost"
-								className="w-full justify-start"
-								onPress={() => handleMoveToFolder(null)}
-							>
-								<Text>Ingen mappe</Text>
-							</Button>
-							{folders?.filter(folder => folder.id !== currentFavorite?.folder_id).map((folder) => (
-								<Button
-									key={folder.id}
-									variant="ghost"
-									className="w-full justify-start"
-									onPress={() => handleMoveToFolder(folder.id)}
-								>
-									<Text>{folder.name}</Text>
-								</Button>
-							))}
-						</View>
-					</View>
+					<Animated.View 
+						className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl"
+						style={{
+							transform: [{
+								translateY: slideAnim.interpolate({
+									inputRange: [0, 1],
+									outputRange: [600, 0]
+								})
+							}]
+						}}
+					>
+						<SafeAreaView edges={['bottom']}>
+							<View className="p-4">
+								<View className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6" />
+								
+								<View className="flex-row items-center justify-between mb-6 px-2">
+									<Text className="text-xl font-semibold">Flytt til mappe</Text>
+									<TouchableOpacity 
+										onPress={() => setShowMenu(false)}
+										className="p-2 -m-2"
+									>
+										<X size={24} className="text-muted-foreground" />
+									</TouchableOpacity>
+								</View>
+
+								<View className="space-y-3">
+									<TouchableOpacity
+										className="flex-row items-center p-4 rounded-xl bg-muted/50 active:bg-muted"
+										onPress={() => handleMoveToFolder(null)}
+									>
+										<Folder size={24} className="text-muted-foreground mr-4" />
+										<Text className="text-base">Ingen mappe</Text>
+									</TouchableOpacity>
+									
+									{folders?.filter(folder => folder.id !== currentFavorite?.folder_id).map((folder) => (
+										<TouchableOpacity
+											key={folder.id}
+											className="flex-row items-center p-4 rounded-xl bg-muted/50 active:bg-muted"
+											onPress={() => handleMoveToFolder(folder.id)}
+										>
+											<Folder size={24} className="text-muted-foreground mr-4" />
+											<Text className="text-base">{folder.name}</Text>
+										</TouchableOpacity>
+									))}
+								</View>
+							</View>
+						</SafeAreaView>
+					</Animated.View>
 				</TouchableOpacity>
 			</Modal>
 		</>
