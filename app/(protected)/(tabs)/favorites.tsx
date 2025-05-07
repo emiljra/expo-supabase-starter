@@ -83,6 +83,11 @@ export default function Favorites() {
 					>
 						<Plus size={20} />
 					</Button>
+					<FavoriteFolderItem
+						folder={{ id: 'all', name: 'Alle', created_at: '', user_id: '' }}
+						isSelected={selectedFolder === null}
+						onPress={() => setSelectedFolder(null)}
+					/>
 					{folders?.map((folder) => (
 						<FavoriteFolderItem
 							key={folder.id}

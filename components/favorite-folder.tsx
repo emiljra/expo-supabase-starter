@@ -75,7 +75,7 @@ export default function FavoriteFolderItem({ folder, isSelected, onPress }: Favo
       >
         <Folder
           size={16}
-          className={cn(isSelected ? "text-primary-foreground" : "text-foreground")}
+          color={isSelected ? "#ffffff" : "#000000"}
         />
         <Text
           className={cn(

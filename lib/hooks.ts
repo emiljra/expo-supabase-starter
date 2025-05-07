@@ -342,6 +342,14 @@ export function useDeleteFavoriteFolder() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // First, move all favorites in this folder to no folder
+      await supabase
+        .from('favorites')
+        .update({ folder_id: null })
+        .eq('folder_id', id)
+        .throwOnError();
+
+      // Then delete the folder
       await supabase
         .from('favorite_folders')
         .delete()
