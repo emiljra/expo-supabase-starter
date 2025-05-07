@@ -13,6 +13,7 @@ import React from "react";
 import ImageView from "react-native-image-viewing";
 import RenderHtml from 'react-native-render-html';
 import CompanyCard from "@/components/company-card";
+import Carousel from 'react-native-reanimated-carousel';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
@@ -96,6 +97,7 @@ export default function ListingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [carouselIndex, setCarouselIndex] = useState(0);
 
   const { data: listing, isLoading, error, refetch } = useQuery({
     queryKey: ['listing', listingType, listingId],
@@ -174,37 +176,43 @@ export default function ListingScreen() {
         }
       >
         <View className="px-4 py-4">
-          <Pressable onPress={() => handleImagePress(0)}>
-            <Image
-              source={{ uri: listing?.featured_image }}
-              className="w-full h-72 rounded-xl mb-4"
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
-          </Pressable>
-
-          {images.length > 1 && (
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              className="mb-6"
-            >
-              {images.map((image, index) => (
-                <Pressable 
-                  key={index}
-                  onPress={() => handleImagePress(index)}
-                  className="mr-2"
-                >
+          <View>
+            <Carousel
+              width={SCREEN_WIDTH - 32}
+              height={288}
+              data={images}
+              onSnapToItem={setCarouselIndex}
+              renderItem={({ item, index }) => (
+                <Pressable onPress={() => handleImagePress(index)}>
                   <Image
-                    source={{ uri: image }}
-                    className="w-20 h-20 rounded-lg"
+                    source={{ uri: item }}
+                    className="w-full h-72 rounded-xl"
                     contentFit="cover"
                     cachePolicy="memory-disk"
                   />
+                  <View style={{ position: 'absolute', top: 12, right: 16, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ color: '#fff', fontSize: 14 }}>{index + 1}/{images.length}</Text>
+                  </View>
                 </Pressable>
+              )}
+              style={{ borderRadius: 16, marginBottom: 16 }}
+              loop={false}
+            />
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
+              {images.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    marginHorizontal: 4,
+                    backgroundColor: idx === carouselIndex ? '#222' : '#ccc',
+                  }}
+                />
               ))}
-            </ScrollView>
-          )}
+            </View>
+          </View>
 
           <View className="gap-4">
             <View className="flex-row items-center gap-2">
@@ -258,6 +266,11 @@ export default function ListingScreen() {
         doubleTapToZoomEnabled={true}
         presentationStyle="overFullScreen"
         animationType="fade"
+        FooterComponent={({ imageIndex }) => (
+          <View style={{ position: 'absolute', top: 40, right: 24, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ color: '#fff', fontSize: 16 }}>{(imageIndex ?? 0) + 1}/{images.length}</Text>
+          </View>
+        )}
       />
     </SafeAreaView>
   );
