@@ -16,6 +16,7 @@ import CompanyCard from "@/components/company-card";
 import Carousel from 'react-native-reanimated-carousel';
 import ListingMeta from "@/components/listing-meta";
 import { cn } from "@/lib/utils";
+import { useFavorites, useAddFavorite, useRemoveFavorite } from "@/lib/hooks";
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
@@ -133,16 +134,45 @@ export default function ListingScreen() {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+
+  const { data: favorites } = useFavorites();
+  const addFavorite = useAddFavorite();
+  const removeFavorite = useRemoveFavorite();
+
+  const isFavorite = favorites?.some(favorite => {
+    if (listingType === 'job') return favorite.job_id === listingId;
+    if (listingType === 'vessel') return favorite.vessel_id === listingId;
+    if (listingType === 'borsen') return favorite.borsen_id === listingId;
+    return false;
+  });
+
+  const currentFavorite = favorites?.find(f => {
+    if (listingType === 'job') return f.job_id === listingId;
+    if (listingType === 'vessel') return f.vessel_id === listingId;
+    if (listingType === 'borsen') return f.borsen_id === listingId;
+    return false;
+  });
 
   const handleFavorite = useCallback(async () => {
     try {
-      // TODO: Implement favorite functionality with Supabase
-      setIsFavorite(prev => !prev);
+      if (isFavorite) {
+        if (currentFavorite) {
+          await removeFavorite.mutateAsync(currentFavorite.id);
+        }
+      } else {
+        await addFavorite.mutateAsync({
+          listing_type: listingType as 'job' | 'vessel' | 'borsen',
+          job_id: listingType === 'job' ? listingId : null,
+          vessel_id: listingType === 'vessel' ? listingId : null,
+          borsen_id: listingType === 'borsen' ? listingId : null,
+          folder_id: null,
+          listing: null
+        });
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
     }
-  }, []);
+  }, [isFavorite, currentFavorite, listingType, listingId, addFavorite, removeFavorite]);
 
   const { data: listing, isLoading, error, refetch } = useQuery({
     queryKey: ['listing', listingType, listingId],
@@ -266,18 +296,39 @@ export default function ListingScreen() {
               loop={false}
             />
             <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -30, marginBottom: 16 }}>
-              {images.map((_, idx) => (
-                <View
-                  key={idx}
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: 6,
-                    marginHorizontal: 2,
-                    backgroundColor: idx === carouselIndex ? '#222' : '#ccc',
-                  }}
-                />
-              ))}
+              {images.length <= 6 ? (
+                // Show all dots if 6 or fewer images
+                images.map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 6,
+                      marginHorizontal: 2,
+                      backgroundColor: idx === carouselIndex ? '#222' : '#ccc',
+                    }}
+                  />
+                ))
+              ) : (
+                // Show 6 dots with current position indicator
+                Array.from({ length: 6 }).map((_, idx) => {
+                  const dotPosition = Math.floor((carouselIndex / (images.length - 1)) * 5);
+                  const isActive = idx === dotPosition;
+                  return (
+                    <View
+                      key={idx}
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 6,
+                        marginHorizontal: 2,
+                        backgroundColor: isActive ? '#222' : '#ccc',
+                      }}
+                    />
+                  );
+                })
+              )}
             </View>
             <View className="flex-row items-center gap-2">
               <H1 className="text-lg text-balance">{listing?.title}</H1>
