@@ -1,9 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from './ui/text';
+import { Listing, BorsenListing } from '@/app/(protected)/listing/[type]/[id]';
 
 interface ListingMetaProps {
-  data: any;
+  data: Listing;
   type: 'job' | 'borsen' | 'vessel';
 }
 
@@ -14,11 +15,15 @@ const conditionLabels: Record<string, string> = {
   'broken': 'Defekt',
 };
 
-export default function ListingMeta({ data, type }: ListingMetaProps) {
-  if (type === 'job') {
+function isBorsenListing(listing: Listing): listing is BorsenListing {
+  return listing.type === 'borsen';
+}
+
+export default function ListingMeta({ data }: ListingMetaProps) {
+  if (data.type === 'job') {
     const metaItems = [
-      { label: 'Arbeidsgiver', value: data.company?.company_name },
-      { label: 'Stillingstittel', value: data.position_title },
+      { label: 'Arbeidsgiver', value: data.company_id?.company_name },
+      { label: 'Stillingstittel', value: data.title },
       {
         label: 'Søknadsfrist',
         value: data.application_due
@@ -29,7 +34,6 @@ export default function ListingMeta({ data, type }: ListingMetaProps) {
             })
           : 'Ingen frist oppgitt',
       },
-      { label: 'Ansettelsesform', value: data.form_of_employment || 'Ikke spesifisert' },
       { label: 'Lokasjon', value: data.kommune_fk?.kommunenavn || 'Ukjent lokasjon' },
     ];
     return (
@@ -44,7 +48,7 @@ export default function ListingMeta({ data, type }: ListingMetaProps) {
     );
   }
 
-  if (type === 'borsen') {
+  if (data.type === 'borsen') {
     const formattedPrice = data.price
       ? new Intl.NumberFormat('nb-NO', {
           style: 'currency',
@@ -54,9 +58,8 @@ export default function ListingMeta({ data, type }: ListingMetaProps) {
       : 'Pris ikke oppgitt';
 
     const metaItems = [
-      { label: 'Selger', value: data.company?.company_name },
-      { label: 'Kategori', value: data.borsen_category },
-      { label: 'Tilstand', value: conditionLabels[data.condition ?? 'used'] },
+      { label: 'Selger', value: data.company_id?.company_name || 'Ukjent selger' },
+      { label: 'Kategori', value: isBorsenListing(data) ? data.borsen_category || 'Ukjent kategori' : 'Ukjent kategori' },
       { label: 'Lokasjon', value: data.kommune_fk?.kommunenavn || 'Ukjent lokasjon' },
     ];
 
@@ -76,7 +79,7 @@ export default function ListingMeta({ data, type }: ListingMetaProps) {
     );
   }
 
-  if (type === 'vessel') {
+  if (data.type === 'vessel') {
     const formattedPrice = data.price
       ? new Intl.NumberFormat('nb-NO', {
           style: 'currency',
@@ -86,9 +89,8 @@ export default function ListingMeta({ data, type }: ListingMetaProps) {
       : 'Pris ikke oppgitt';
 
     const metaItems = [
-      { label: 'Selger', value: data.company?.company_name },
-      { label: 'Kategori', value: data.vessel_category },
-      { label: 'Tilstand', value: conditionLabels[data.condition ?? 'used'] },
+      { label: 'Selger', value: data.company_id?.company_name || 'Ukjent selger' },
+      { label: 'Kategori', value: data.title || 'Ukjent kategori' },
       { label: 'Lokasjon', value: data.kommune_fk?.kommunenavn || 'Ukjent lokasjon' },
     ];
 

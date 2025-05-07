@@ -19,7 +19,7 @@ import ListingMeta from "@/components/listing-meta";
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const THUMBNAIL_SIZE = 80;
 
-interface Listing {
+export interface BaseListing {
   id: string;
   title: string;
   featured_image: string;
@@ -29,7 +29,7 @@ interface Listing {
   };
   price: number | null;
   description: string;
-  company?: {
+  company_id?: {
     company_logo: string;
     company_name: string;
     about_company: string;
@@ -50,7 +50,23 @@ interface Listing {
     email: string;
   }>;
   application_url?: string;
+  application_due?: string;
 }
+
+export interface JobListing extends BaseListing {
+  type: 'job';
+}
+
+export interface BorsenListing extends BaseListing {
+  type: 'borsen';
+  borsen_category?: string;
+}
+
+export interface VesselListing extends BaseListing {
+  type: 'vessel';
+}
+
+export type Listing = JobListing | BorsenListing | VesselListing;
 
 const fetchListing = async (type: string, id: string): Promise<Listing> => {
   const tableMap = {
@@ -99,8 +115,13 @@ const fetchListing = async (type: string, id: string): Promise<Listing> => {
     data.contact_person = [];
   }
 
-  console.log(data)
-  return data;
+  // Add the type field to the data
+  const listingWithType = {
+    ...data,
+    type: type as 'job' | 'borsen' | 'vessel'
+  };
+
+  return listingWithType;
 };
 
 export default function ListingScreen() {
@@ -199,7 +220,7 @@ export default function ListingScreen() {
                 <Pressable onPress={() => handleImagePress(index)}>
                   <Image
                     source={{ uri: item }}
-                    className="w-full h-72 rounded-xl"
+                    className="w-full h-72 rounded-lg"
                     contentFit="cover"
                     cachePolicy="memory-disk"
                   />
@@ -208,18 +229,18 @@ export default function ListingScreen() {
                   </View>
                 </Pressable>
               )}
-              style={{ borderRadius: 16, marginBottom: 16 }}
+              style={{ borderRadius: 8, marginBottom: 8 }}
               loop={false}
             />
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: -30, marginBottom: 16 }}>
               {images.map((_, idx) => (
                 <View
                   key={idx}
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    marginHorizontal: 4,
+                    width: 6,
+                    height: 6,
+                    borderRadius: 6,
+                    marginHorizontal: 2,
                     backgroundColor: idx === carouselIndex ? '#222' : '#ccc',
                   }}
                 />
@@ -230,11 +251,6 @@ export default function ListingScreen() {
             <ListingMeta data={listing} type={listingType as 'job' | 'borsen' | 'vessel'} />
           )}
           <View className="gap-4">
-            <View className="flex-row items-center gap-2">
-              <MapPin size={16} className="text-muted-foreground" />
-              <Text className="text-muted-foreground">{listing?.kommune_fk?.kommunenavn}</Text>
-            </View>
-
             {listing?.price && (
               <View className="bg-muted/50 p-4 rounded-lg">
                 <Text className="text-lg font-semibold">
@@ -243,7 +259,7 @@ export default function ListingScreen() {
               </View>
             )}
 
-            <View className="gap-2">
+            <View className="gap-2 mt-4">
               <Text className="text-lg font-semibold">Beskrivelse</Text>
               <RenderHtml
                 contentWidth={SCREEN_WIDTH - 32} // Account for padding
@@ -263,9 +279,9 @@ export default function ListingScreen() {
             </View>
           </View>
         </View>
-        {listing?.company && listing?.contact_person && (
+        {listing?.company_id && listing?.contact_person && (
           <CompanyCard data={{
-            company_id: listing.company,
+            company_id: listing.company_id,
             contact_person: listing.contact_person,
             application_url: listing.application_url,
           }} listingType={listingType} />
