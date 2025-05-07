@@ -265,9 +265,22 @@ export function useAddFavorite() {
 
   return useMutation({
     mutationFn: async (favorite: Omit<Favorite, 'id' | 'created_at' | 'user_id'>) => {
+      // Convert listing type to Norwegian enum value
+      const listingTypeMap = {
+        'job': 'Jobb',
+        'vessel': 'Fartøy',
+        'borsen': 'Børsen'
+      } as const;
+
       const { data } = await supabase
         .from('favorites')
-        .insert(favorite)
+        .insert({
+          listing_type: listingTypeMap[favorite.listing_type],
+          folder_id: favorite.folder_id,
+          job_id: favorite.job_id,
+          vessel_id: favorite.vessel_id,
+          borsen_id: favorite.borsen_id,
+        })
         .select()
         .single()
         .throwOnError();

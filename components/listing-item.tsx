@@ -2,11 +2,12 @@ import React from "react";
 import { View, TouchableOpacity, Modal } from "react-native";
 import { Text } from "./ui/text";
 import { Image } from "./image";
-import { Heart, MoreVertical } from "lucide-react-native";
+import { Bookmark } from "lucide-react-native";
 import { useAddFavorite, useRemoveFavorite, useFavorites, useFavoriteFolders, useMoveFavoriteToFolder } from "@/lib/hooks";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { cn } from "@/lib/utils";
 
 interface Listing {
 	id: string;
@@ -46,14 +47,31 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 					await removeFavorite.mutateAsync(currentFavorite.id);
 				}
 			} else {
-				await addFavorite.mutateAsync({
-					listing_type: listing.type,
-					job_id: listing.type === 'job' ? listing.id : null,
-					vessel_id: listing.type === 'vessel' ? listing.id : null,
-					borsen_id: listing.type === 'borsen' ? listing.id : null,
-					folder_id: null,
-					listing: null
+				// Check if we already have a favorite for this listing
+				const existingFavorite = favorites?.find(f => {
+					if (listing.type === 'job') return f.job_id === listing.id;
+					if (listing.type === 'vessel') return f.vessel_id === listing.id;
+					if (listing.type === 'borsen') return f.borsen_id === listing.id;
+					return false;
 				});
+
+				if (existingFavorite) {
+					// If it exists, just update its folder_id if needed
+					await moveToFolder.mutateAsync({
+						favoriteId: existingFavorite.id,
+						folderId: null
+					});
+				} else {
+					// If it doesn't exist, create a new favorite
+					await addFavorite.mutateAsync({
+						listing_type: listing.type,
+						job_id: listing.type === 'job' ? listing.id : null,
+						vessel_id: listing.type === 'vessel' ? listing.id : null,
+						borsen_id: listing.type === 'borsen' ? listing.id : null,
+						folder_id: null,
+						listing: null
+					});
+				}
 			}
 		} catch (error) {
 			console.error("Error toggling favorite:", error);
@@ -91,24 +109,19 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 						className="w-full h-40 rounded-lg border object-contain border-[#E7F2F8]"
 						contentFit="cover"
 					/>
-					<View className="absolute top-2 right-2 flex-row gap-2">
+					<View className="absolute top-2 right-2">
 						<TouchableOpacity
-							className="p-2 rounded-full bg-background/80"
+							className="p-2 rounded-full bg-[#E7F2F8]/20"
 							onPress={handleFavorite}
+							onLongPress={() => isFavorite && setShowMenu(true)}
+							delayLongPress={500}
 						>
-							<Heart
+							<Bookmark
+								color={"#fa8072"}
+								fill={isFavorite ? "#fa8072" : "transparent"}
 								size={20}
-								className={isFavorite ? "text-red-500 fill-red-500" : "text-muted-foreground"}
 							/>
 						</TouchableOpacity>
-						{isFavorite && (
-							<TouchableOpacity
-								className="p-2 rounded-full bg-background/80"
-								onPress={() => setShowMenu(true)}
-							>
-								<MoreVertical size={20} className="text-muted-foreground" />
-							</TouchableOpacity>
-						)}
 					</View>
 				</View>
 				<View className="p-3">
@@ -143,7 +156,7 @@ export default function ListingItem({ listing }: { listing: Listing }) {
 							>
 								<Text>Ingen mappe</Text>
 							</Button>
-							{folders?.map((folder) => (
+							{folders?.filter(folder => folder.id !== currentFavorite?.folder_id).map((folder) => (
 								<Button
 									key={folder.id}
 									variant="ghost"
