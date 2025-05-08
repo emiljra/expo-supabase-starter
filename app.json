@@ -45,7 +45,8 @@
           "resizeMode": "cover",
           "image": "./assets/splash-dark.png"
         }
-      }
+      },
+      "package": "com.byfjords.Havborsen"
     },
     "experiments": {
       "typedRoutes": true
