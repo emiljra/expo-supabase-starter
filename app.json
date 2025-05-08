@@ -19,9 +19,9 @@
       "splash": {
         "image": "./assets/splash.png",
         "resizeMode": "cover",
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#E7F2F8",
         "dark": {
-          "backgroundColor": "#000000",
+          "backgroundColor": "#23245A",
           "resizeMode": "cover",
           "image": "./assets/splash-dark.png"
         }
@@ -39,9 +39,9 @@
       "splash": {
         "image": "./assets/splash.png",
         "resizeMode": "cover",
-        "backgroundColor": "#ffffff",
+        "backgroundColor": "#E7F2F8",
         "dark": {
-          "backgroundColor": "#000000",
+          "backgroundColor": "#23245A",
           "resizeMode": "cover",
           "image": "./assets/splash-dark.png"
         }
